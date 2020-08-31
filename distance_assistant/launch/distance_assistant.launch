@@ -20,6 +20,12 @@
 <arg name="min_hits"         default="7"/>
 <arg name="max_age"          default="3"/>
 <arg name="draw_smiley"      default="true"/>
+<!-- If set, blur the people to prevent identification -->
+<arg name="blur_people"      default="false"/>
+<!-- If set, blur the whole image to prevent identification -->
+<arg name="blur_image"       default="true"/>
+<arg name="blur_image_kernel_height" default="37" />
+<arg name="blur_image_kernel_width" default="37" />
 
 <!-- if set True, camera extrinsics are computed from IMU and Depth Data-->
 <arg name="auto_calibrate"        default="true"/>
@@ -72,6 +78,13 @@ camera extrinsics-->
     <param name="draw_smiley" value="$(arg draw_smiley)" />
     <param name="green_smiley_filename" value="$(arg green_smiley_filename)"/>
     <param name="red_smiley_filename" value="$(arg red_smiley_filename)"/>
+
+    <!-- Image obfuscation parameters -->
+    <param name="blur_people" value="$(arg blur_people)"/>
+    <param name="blur_image" value="$(arg blur_image)"/>
+
+    <param name="blur_image_kernel_height" value="$(arg blur_image_kernel_height)"/>
+    <param name="blur_image_kernel_width" value="$(arg blur_image_kernel_width)"/>
 </node>
 
 <include file="$(find realsense2_camera)/launch/rs_camera.launch" >

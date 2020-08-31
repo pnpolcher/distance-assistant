@@ -133,6 +133,12 @@ class DistanceAssistant:
         self.red_smiley_mask_inv = None
         self.draw_smiley = rospy.get_param('~draw_smiley')
 
+        # Init image obfuscation parameters
+        self.blur_people_flag = rospy.get_param('~blur_people')
+        self.blur_image_flag = rospy.get_param('~blur_image')
+        self.blur_image_kernel_height = rospy.get_param('~blur_image_kernel_height') | 1
+        self.blur_image_kernel_width = rospy.get_param('~blur_image_kernel_width') | 1
+
     def read_manual_calibration_params(self):
         """ Read precomputed camera extrics parameters from file """
         self.camera_roll = rospy.get_param('~camera_roll') * np.pi / 180.
@@ -424,7 +430,7 @@ class DistanceAssistant:
             self.get_smiley_mask(self.red_smiley)
 
 
-    def draw_smilies(self, vis_img, detections):
+    def draw_smileys(self, vis_img, detections):
         """ Draw smilies over people in the image.
 
         Arguments:
@@ -522,6 +528,47 @@ class DistanceAssistant:
         # update visualization image
         vis_img[np.where(mask[:, :, 0])] = Color.RED.value
         vis_img[np.where(mask[:, :, 1])] = Color.GREEN.value
+        return vis_img
+
+    def blur_image(self, vis_img):
+        """ Blur the whole image to prevent identification of place and people.
+        
+        Arguments:
+            vis_img: RGB image that will be modified
+            detections: list of people detections
+        
+        Returns:
+            vis_img: blurred image
+        """
+        h, w, _ = vis_img.shape
+        kernel_size = (self.blur_image_kernel_height, self.blur_image_kernel_width)
+
+        result = cv2.GaussianBlur(vis_img, kernel_size, 0)
+
+        return result
+
+    def blur_people(self, vis_img, detections):
+        """ Blur the people in the image to prevent their identification.
+
+        Arguments:
+            vis_img: RGB image that will be modified.
+            detections: list of people detections.
+
+        Returns:
+            vis_img: image with blurred people
+        """
+
+        for _, detection in enumerate(detections):
+            bbox = np.array(detection.bbox)
+            h = bbox[2] - bbox[0]
+            w = bbox[3] - bbox[1]
+            kernel_height = (h // 5) | 1
+            kernel_width = (w // 5) | 1
+
+            detection_img = vis_img[bbox[1]:bbox[1]+h, bbox[0]:bbox[0]+w]
+            blurred_img = cv2.GaussianBlur(detection_img, (kernel_height, kernel_width), 0)
+            vis_img[bbox[1]:bbox[1]+h, bbox[0]:bbox[0]+w] = blurred_img
+
         return vis_img
 
     def publish_detections(self, detections, compute_time, timestamp):
@@ -635,8 +682,13 @@ class DistanceAssistant:
         self.compute_proximities(detections)
         if (self.publish_vis):
             vis_img = np.copy(orig_img)
+            if self.blur_image_flag:
+                vis_img = self.blur_image(vis_img)
+            elif self.blur_people_flag:
+                vis_img = self.blur_people(vis_img, detections)
+
             if self.draw_smiley:
-                vis_img = self.draw_smilies(vis_img, detections)
+                vis_img = self.draw_smileys(vis_img, detections)
             if self.draw_circle:
                 vis_img = self.draw_circles(vis_img, detections)
             if self.draw_bbox:
