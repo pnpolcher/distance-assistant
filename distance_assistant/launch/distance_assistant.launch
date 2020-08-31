@@ -19,11 +19,11 @@
 <arg name="enable_temporal_filter"      default="true"/>
 <arg name="min_hits"         default="7"/>
 <arg name="max_age"          default="3"/>
-<arg name="draw_smiley"      default="true"/>
+<arg name="draw_smiley"      default="false"/>
 <!-- If set, blur the people to prevent identification -->
 <arg name="blur_people"      default="false"/>
 <!-- If set, blur the whole image to prevent identification -->
-<arg name="blur_image"       default="true"/>
+<arg name="blur_image"       default="false"/>
 <arg name="blur_image_kernel_height" default="37" />
 <arg name="blur_image_kernel_width" default="37" />
 

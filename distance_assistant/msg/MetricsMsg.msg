@@ -1,0 +1,3 @@
+float32 epoch
+int16 noncompliant_detections
+int16 total_detections

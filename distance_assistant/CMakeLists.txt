@@ -43,6 +43,7 @@ find_package(catkin REQUIRED COMPONENTS
    BboxMsg.msg
    DetectionMsg.msg
    DetectionsMsg.msg
+   MetricsMsg.msg
  )
 
 ## Generate added messages and services with any dependencies listed here

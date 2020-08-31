@@ -19,7 +19,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import time
 from darknet_custom import *
 from cv_bridge import CvBridge, CvBridgeError
-from distance_assistant.msg import BboxMsg, DetectionMsg, DetectionsMsg
+from distance_assistant.msg import BboxMsg, DetectionMsg, DetectionsMsg, MetricsMsg
 import temporal_filter
 
 
@@ -84,6 +84,9 @@ class DistanceAssistant:
         self.detections_pub = rospy.Publisher("/distance_assistant/detections",
                                               DetectionsMsg,
                                               queue_size=5)
+        self.metrics_pub = rospy.Publisher("/distance_assistant/metrics",
+                                           MetricsMsg,
+                                           queue_size=5)
 
     def init_params(self):
         """Initialize node parameters from ROS parameter server."""
