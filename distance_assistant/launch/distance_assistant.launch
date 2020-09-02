@@ -24,8 +24,21 @@
 <arg name="blur_people"      default="false"/>
 <!-- If set, blur the whole image to prevent identification -->
 <arg name="blur_image"       default="false"/>
-<arg name="blur_image_kernel_height" default="37" />
-<arg name="blur_image_kernel_width" default="37" />
+<arg name="blur_image_kernel_height" default="37"/>
+<arg name="blur_image_kernel_width" default="37"/>
+
+<!-- AWS configuration -->
+<arg name="aws_region_name" default="us-east-1"/>
+
+<!-- Metrics -->
+<arg name="metrics_location" default="test_location"/>
+<arg name="metrics_sampling_period" default="15"/>
+<arg name="metrics_enable_kinesis" default="false"/>
+<arg name="metrics_identity_pool_id" default=""/>
+<arg name="metrics_kinesis_stream" default="distance-assistant-stream"/>
+<arg name="metrics_enable_local" default="false"/>
+<arg name="metrics_path" default="/var/metrics"/>
+<arg name="metrics_max_file_size" default="131072"/>
 
 <!-- if set True, camera extrinsics are computed from IMU and Depth Data-->
 <arg name="auto_calibrate"        default="true"/>
@@ -85,6 +98,19 @@ camera extrinsics-->
 
     <param name="blur_image_kernel_height" value="$(arg blur_image_kernel_height)"/>
     <param name="blur_image_kernel_width" value="$(arg blur_image_kernel_width)"/>
+
+    <!-- AWS configuration -->
+    <param name="aws_region_name" value="$(arg aws_region_name)"/>
+
+    <!-- Metrics -->
+    <param name="metrics_location" value="$(arg metrics_location)"/>
+    <param name="metrics_sampling_period" value="$(arg metrics_sampling_period)"/>
+    <param name="metrics_enable_kinesis" value="$(arg metrics_enable_kinesis)"/>
+    <param name="metrics_identity_pool_id" value="$(arg metrics_identity_pool_id)"/>
+    <param name="metrics_kinesis_stream" value="$(arg metrics_kinesis_stream)"/>
+    <param name="metrics_enable_local" value="$(arg metrics_enable_local"/>
+    <param name="metrics_path" value="$(arg metrics_path)"/>
+    <param name="metrics_max_file_size" value="$(arg metrics_max_file_size)"/>
 </node>
 
 <include file="$(find realsense2_camera)/launch/rs_camera.launch" >

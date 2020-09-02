@@ -50,7 +50,7 @@ RUN apt update \
     libopencv-calib3d-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# install cv2 for python
+# install cv2 and boto3 for python
 RUN pip install \
         filterpy \
         future \
@@ -59,7 +59,8 @@ RUN pip install \
         opencv-contrib-python \
         scikit-image==0.10.1 \
         scipy \
-        sklearn
+        sklearn \
+        boto3
 
 # Install realsense ROS wrappers
 RUN apt update \
@@ -98,6 +99,10 @@ RUN cd /home/catkin_ws/ && \
 RUN apt clean \
   && apt autoremove \
   && rm -rf /var/lib/apt/lists/*
+
+# Create the /var/metrics dir to be mapped to a directory
+# outside the container.
+RUN mkdir -p /var/metrics
 
 # Set up container entrypoint.
 # NOTE: The whole point is to keep this container "zero-configuration" for the ops team

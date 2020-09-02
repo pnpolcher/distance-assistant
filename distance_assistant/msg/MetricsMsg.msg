@@ -1,3 +1,4 @@
-float32 epoch
+int64 epoch
+string location
 int16 noncompliant_detections
 int16 total_detections

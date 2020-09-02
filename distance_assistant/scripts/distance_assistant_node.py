@@ -4,22 +4,30 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT
 """
 
+import copy
 from collections import deque
+import os
+import sys
+import time
+
+import cv2
 import numpy as np
 from skimage import io, draw
-import copy
-from scipy.spatial import distance
-import rospy
-from std_msgs.msg import String
-from sensor_msgs.msg import Image, CameraInfo, Imu
-import message_filters
-import sys
-import cv2
+
 from cv_bridge import CvBridge, CvBridgeError
-import time
 from darknet_custom import *
-from cv_bridge import CvBridge, CvBridgeError
 from distance_assistant.msg import BboxMsg, DetectionMsg, DetectionsMsg, MetricsMsg
+import message_filters
+from metrics import (
+    Metrics,
+    KinesisMetricsPublisher,
+    LocalMetricsPublisher,
+    RosMetricsPublisher
+)
+import rospy
+from sensor_msgs.msg import Image, CameraInfo, Imu
+from scipy.spatial import distance
+from std_msgs.msg import String
 import temporal_filter
 
 
@@ -40,6 +48,16 @@ def parse_array_from_string(list_str, dtype=int):
 
     return np.array(list_str[1:-1].split(','), dtype=dtype)
 
+def config_getparam(param_name):
+    param_value = os.environ.get(param_name.upper())
+
+    # Parameter was not passed as an environment variable.
+    # Try retrieving it from ROS parameters.
+    if param_value is None:
+        param_value = rospy.get_param('~{}' . format(param_name.lower()))
+
+    return param_value
+
 
 class DistanceAssistant:
     def __init__(self):
@@ -53,6 +71,7 @@ class DistanceAssistant:
         self.bridge = CvBridge()
         self.init_subscribers()
         self.init_publishers()
+        self.init_metrics()
 
     def init_subscribers(self):
         """Initialize ROS topic subscriptions."""
@@ -87,6 +106,43 @@ class DistanceAssistant:
         self.metrics_pub = rospy.Publisher("/distance_assistant/metrics",
                                            MetricsMsg,
                                            queue_size=5)
+
+    def init_metrics(self):
+        """ Initialize metrics capture and reporting. """
+
+        enable_local = config_getparam('metrics_enable_local')
+        enable_kinesis = config_getparam('metrics_enable_kinesis')
+
+        metrics_config = {
+            'aws_region_name': config_getparam('aws_region_name'),
+            'location': config_getparam('metrics_location'),
+            'sampling_period': int(config_getparam('metrics_sampling_period')),
+            'identity_pool_id': config_getparam('metrics_identity_pool_id')\
+                if enable_kinesis else None,
+            'kinesis_stream': config_getparam('metrics_kinesis_stream')\
+                if enable_kinesis else None,
+            'max_file_size': int(config_getparam('metrics_max_file_size'))\
+                if enable_local else None,
+            'metrics_path': config_getparam('metrics_path')\
+                if enable_local else None,
+            'ros_publisher': self.metrics_pub
+        }
+
+        self.metrics = Metrics(**metrics_config)
+        self.metrics.register_publisher(
+            RosMetricsPublisher(**metrics_config)
+        )
+
+        if enable_local:
+            self.metrics.register_publisher(
+                LocalMetricsPublisher(**metrics_config)
+            )
+
+        if enable_kinesis:
+            self.metrics.register_publisher(
+                KinesisMetricsPublisher(**metrics_config)
+            )
+
 
     def init_params(self):
         """Initialize node parameters from ROS parameter server."""
@@ -683,6 +739,12 @@ class DistanceAssistant:
 
         # compute proximities for each person in the scene
         self.compute_proximities(detections)
+
+        # Compute metrics.
+        self.metrics.compute_metrics(detections)
+
+        # Produce an output from the visible image, if publishing the video
+        # stream.
         if (self.publish_vis):
             vis_img = np.copy(orig_img)
             if self.blur_image_flag:
